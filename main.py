@@ -17,7 +17,6 @@ client = discord.Client()
 
 # Some variables
 #wiki_wiki = wikipediaapi.Wikipedia('ru')
-bad_wordz = ['блять', 'сука', 'пиздец', 'ебать', 'охуеть', 'пизда']
 
 @bot.command()
 async def hello(ctx):
