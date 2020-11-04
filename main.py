@@ -3,20 +3,20 @@
 import discord
 from discord.ext import commands
 from config import settings
+import config
 import json
 import requests
 import random
 import praw
-import wikipediaapi
-import time
+import asyncio
 import typing
+import time
+
 
 # Variables to work with discord module
 bot = commands.Bot(command_prefix = settings['prefix']) # Prefix from the config file
 client = discord.Client()
-
-# Some variables
-#wiki_wiki = wikipediaapi.Wikipedia('ru')
+currenttime = time.ctime()
 
 @bot.command()
 async def hello(ctx):
@@ -26,6 +26,17 @@ async def hello(ctx):
     await ctx.send(f'Приветики-пистолетики, {author.mention}!')
 
 
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send('Вы ввели недостаточно аргументов для выполнения коммнады :rolling_eyes:!')
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("У Вас недостаточно прав для выполнения данной комманды! :angry:")
+
+@bot.command()
+async def report(ctx, member : discord.Member, reason = 'Не делай так :3'):
+    author = ctx.message.author
+    await ctx.send(f'{author.mention} пожаловался на {member.mention}, причина: {reason}!')
 
 @bot.command()
 async def cat(ctx):
@@ -40,7 +51,36 @@ async def cat(ctx):
 @bot.event
 async def on_ready():
     print(f'Влетел на сервер как {bot.user.name}')
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="звуки дождя..."), status=discord.Status.do_not_disturb)
 
+
+@bot.command()
+@commands.has_permissions(administrator = True)
+async def ban(ctx, member: discord.Member, reason="Нарушение правил"):
+    await ctx.message.delete()
+    if member == "" or member == ctx.message.author:
+        await ctx.send(f'Ошибка выполнения комманды! Вы не указали пользователя или Вы указали самого себя!')
+    elif reason == "":
+        await ctx.send(f'Вы должны указать причину бана!')
+    await member.ban(reason = reason)
+    await ctx.send(f'{member} был забанен! Причина: {reason}.')
+    await member.send(f'Вы были забанены на сервере {ctx.guild.name}! Причина: {reason}')
+
+
+@bot.command()
+@commands.has_permissions(administrator = True)
+async def unban(ctx, *, member):
+    await ctx.message.delete()
+    banned_users = await ctx.guild.bans()
+    member_name, member_discriminator = member.split("#")
+
+    for ban_entry in banned_users:
+        user = ban_entry.user
+
+        if (user.name, user.discriminator) == (member_name, member_discriminator):
+            await ctx.guild.unban(user)
+            await ctx.send(f'Администратор {ctx.message.author} разбанил {user.mention}!')
+            return
 
 @bot.command()
 async def joke(ctx):
@@ -99,7 +139,7 @@ async def credits(ctx):
     Кэт
     CatProgrammer#3770
     GitHub репозиторий бота:
-    https://github.com/CatProgrammerYT/discord_bot """)
+    https://github.com/CatProgrammerYT/MeowBot""")
     creditsEmbed.set_image(url='https://scontent.fhrk6-1.fna.fbcdn.net/v/t1.0-9/p960x960/118007530_935392656945902_1150181078772392727_o.jpg?_nc_cat=103&_nc_sid=9e2e56&_nc_ohc=0GN9YavYRe4AX8udgFe&_nc_ht=scontent.fhrk6-1.fna&tp=6&oh=661cf838e60097907bc95d89f4cee549&oe=5F80278C')
     await ctx.send(embed=creditsEmbed)
 
@@ -116,9 +156,19 @@ async def slap(ctx, member : discord.Member):
     slapEm = discord.Embed(
     colour = discord.Colour.purple())
     slapEm.add_field(name=f'ШЛЁП', value = f'{author.mention} шлёпнул {member.mention} :3')
-    slapEm.set_image(url='https://steamuserimages-a.akamaihd.net/ugc/830202924015826450/50671C6E8B6BDCB9CC4190F1E66B73A560FBD2BE/')
+    slapEm.set_image(url='https://media1.tenor.com/images/cced05bb35ffa4c5a9fca0ccb2ebcd91/tenor.gif')
     await ctx.send(embed=slapEm)
 
+@bot.command()
+async def today(ctx):
+    await ctx.message.delete()
+
+    timeEm = discord.Embed(
+        colour = discord.Color.teal())
+    timeEm.add_field(name = f'Текущее время и дата:', value = f'{currenttime}')
+    timeEm.set_image(url='https://3.bp.blogspot.com/-vtTqhCHeMkc/WrexQCI6ZUI/AAAAAAAAAos/N8nT1gLTK4oNqMSnLKym080EvJH5LHVPwCLcBGAs/s1600/Date%2Band%2BTime.png')
+
+    await ctx.send(embed=timeEm)
 
 @bot.command()
 async def pet(ctx, member: discord.Member):
@@ -230,6 +280,7 @@ async def help(ctx):
     embed.add_field(name=',love *@пользователь*', value = 'Покажи свою любовь :3', inline=False)
     embed.add_field(name = ',slap *@пользователь*', value = 'Шлёпни кого-то >:)', inline=False)
     embed.add_field(name = ',pet *@пользователь*', value='Погладь милашку :3', inline=False)
+    embed.add_field(name = ',today', value = 'Текущее время и дата выводятся в чат', inline=False)
     embed.add_field(name='Это внизу Кэт (создатель бота), если шо ', value=':3', inline=False)
     embed.set_image(url='https://media1.tenor.com/images/b1568040b7983be6c7f8bce94caf8f21/tenor.gif')
     await ctx.send(embed=embed)
