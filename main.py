@@ -15,28 +15,66 @@ import time
 
 # Variables to work with discord module
 bot = commands.Bot(command_prefix = settings['prefix']) # Prefix from the config file
-client = discord.Client()
-currenttime = time.ctime()
+client = discord.Client() # Client is a variable used by discord.py
+currenttime = time.ctime() # Time variable used by time module
+
+
+# Variables
+opponenthp = 100
+playerhp = 100
+damage = 0
+
 
 @bot.command()
 async def hello(ctx):
     await ctx.message.delete()
     author = ctx.message.author
-
     await ctx.send(f'Приветики-пистолетики, {author.mention}!')
 
 
-@client.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send('Вы ввели недостаточно аргументов для выполнения коммнады :rolling_eyes:!')
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("У Вас недостаточно прав для выполнения данной комманды! :angry:")
+@bot.command()
+async def fight(ctx, member: discord.Member):
+    await ctx.message.delete()
+    
+    global opponenthp
+    global playerhp
+
+    while opponenthp <= 0:
+        await ctx.send('Вы победили!')
+        opponenthp = 100
+        playerhp = 100
+        break
+    while playerhp <= 0:
+            await ctx.send('Вы проиграли!')
+            opponenthp = 100
+            playerhp = 100
+            break
+    while opponenthp > 0 or playerhp > 0:
+        attackOpponent()
+        await ctx.send(f'Вы аттаковали вашего оппонента и нанесли ему: {opponenthp}')
+        attackPlayer()
+        await ctx.send(f'{member} аттаковал вас и нанёс вам: {playerhp}')
+
+
+def attackOpponent():
+    global damage
+    global opponenthp
+    damage -= random.randint( 1, 2 )
+    opponenthp -= damage
+
+
+def attackPlayer():
+    global damage
+    global playerhp
+    damage -= random.randint( 1, 2 )
+    playerhp -= damage
+
 
 @bot.command()
 async def report(ctx, member : discord.Member, reason = 'Не делай так :3'):
     author = ctx.message.author
     await ctx.send(f'{author.mention} пожаловался на {member.mention}, причина: {reason}!')
+
 
 @bot.command()
 async def cat(ctx):
@@ -47,6 +85,7 @@ async def cat(ctx):
     embed = discord.Embed(color = 0xff9900, title = 'Случайное фото кота :3')
     embed.set_image(url = json_data['link'])
     await ctx.send(embed = embed)
+
 
 @bot.event
 async def on_ready():
