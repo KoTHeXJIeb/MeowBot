@@ -11,6 +11,7 @@ import praw
 import asyncio
 import typing
 import time
+import traceback
 
 
 # Variables to work with discord module
@@ -18,11 +19,27 @@ bot = commands.Bot(command_prefix = settings['prefix']) # Prefix from the config
 client = discord.Client() # Client is a variable used by discord.py
 currenttime = time.ctime() # Time variable used by time module
 
-
 # Variables
 opponenthp = 100
 playerhp = 100
-damage = 0
+damage = random.randint( 1, 100 )
+
+
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound ):
+        await ctx.send(embed = discord.Embed(description = f'** {ctx.author.name}, данной команды не существует.**', color=0x0c0c0c))
+
+
+@bot.command()
+async def say( ctx, text):
+    await ctx.message.delete()
+    author = ctx.message.author
+    sayEm = discord.Embed(
+    colour = discord.Colour.teal())
+    sayEm.set_author(name=f'{author} используя речевые функции MeowBot')
+    sayEm.add_field(name='говорит:', value=f'{text}')
+    await ctx.send(embed=sayEm)
 
 
 @bot.command()
@@ -35,40 +52,64 @@ async def hello(ctx):
 @bot.command()
 async def fight(ctx, member: discord.Member):
     await ctx.message.delete()
-    
+
     global opponenthp
     global playerhp
+    global damage
 
-    while opponenthp <= 0:
-        await ctx.send('Вы победили!')
-        opponenthp = 100
-        playerhp = 100
-        break
-    while playerhp <= 0:
-            await ctx.send('Вы проиграли!')
-            opponenthp = 100
-            playerhp = 100
-            break
     while opponenthp > 0 or playerhp > 0:
         attackOpponent()
-        await ctx.send(f'Вы аттаковали вашего оппонента и нанесли ему: {opponenthp}')
+        await ctx.send(f"Вы нанесли {damage} урона {member}")
+        await ctx.send(f'Ваш текущий уровень здоровья: {playerhp}')
         attackPlayer()
-        await ctx.send(f'{member} аттаковал вас и нанёс вам: {playerhp}')
+        await ctx.send(f"Вам нанёс {damage} урона {member}")
+        await ctx.send(f'Текущий уровень здоровья {member}: {opponenthp}')
+        if opponenthp <= 0:
+            await ctx.send("Вы победили")
+            opponenthp = 100
+            playerhp = 100
+            damage = 0
+            break
+        elif playerhp <= 0:
+            await ctx.send("Вы проиграли")
+            opponenthp = 100
+            playerhp = 100
+            damage = 0
+            break
+
+
+@bot.command()
+async def clear(ctx, amount = 10):
+    await ctx.message.delete()
+    await ctx.channel.purge(limit=amount)
 
 
 def attackOpponent():
     global damage
     global opponenthp
-    damage -= random.randint( 1, 2 )
     opponenthp -= damage
+    if damage <= 0:
+        damage = 5
+        damage = random.randint( 1, 100 )
+    if opponenthp > 100:
+        opponenthp = 100
+    if opponenthp < 0:
+        opponenthp = 0
 
 
 def attackPlayer():
     global damage
     global playerhp
-    damage -= random.randint( 1, 2 )
+    damage -= random.randint( 1, 100)
     playerhp -= damage
-
+    if damage <= 0:
+        damage = 5
+        damage = random.randint( 1, 100 )
+    if playerhp > 100:
+        playerhp = 100
+    if playerhp < 0:
+        playerhp = 0
+    
 
 @bot.command()
 async def report(ctx, member : discord.Member, reason = 'Не делай так :3'):
@@ -92,34 +133,6 @@ async def on_ready():
     print(f'Влетел на сервер как {bot.user.name}')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="звуки дождя..."), status=discord.Status.do_not_disturb)
 
-
-@bot.command()
-@commands.has_permissions(administrator = True)
-async def ban(ctx, member: discord.Member, reason="Нарушение правил"):
-    await ctx.message.delete()
-    if member == "" or member == ctx.message.author:
-        await ctx.send(f'Ошибка выполнения комманды! Вы не указали пользователя или Вы указали самого себя!')
-    elif reason == "":
-        await ctx.send(f'Вы должны указать причину бана!')
-    await member.ban(reason = reason)
-    await ctx.send(f'{member} был забанен! Причина: {reason}.')
-    await member.send(f'Вы были забанены на сервере {ctx.guild.name}! Причина: {reason}')
-
-
-@bot.command()
-@commands.has_permissions(administrator = True)
-async def unban(ctx, *, member):
-    await ctx.message.delete()
-    banned_users = await ctx.guild.bans()
-    member_name, member_discriminator = member.split("#")
-
-    for ban_entry in banned_users:
-        user = ban_entry.user
-
-        if (user.name, user.discriminator) == (member_name, member_discriminator):
-            await ctx.guild.unban(user)
-            await ctx.send(f'Администратор {ctx.message.author} разбанил {user.mention}!')
-            return
 
 @bot.command()
 async def joke(ctx):
@@ -184,18 +197,15 @@ async def credits(ctx):
 
 
 @bot.command()
-async def joined(ctx, *, member: discord.Member):
-    await ctx.send('{0} влетел на сервер {0.joined_at}! Скажите ему привет! :raised_hand:'.format(member))
-
-
-@bot.command()
 async def slap(ctx, member : discord.Member):
+    urlsList = ['https://media.giphy.com/media/rAKdqZ8nfiaZi/giphy.gif', 'https://media.giphy.com/media/l0HlEqutjbZOZwje0/giphy.gif', 'https://media.giphy.com/media/lYSvai8OdGpP2/giphy.gif',
+    'https://media.giphy.com/media/XEVIYsQvFyt2THshE0/giphy.gif']
     await ctx.message.delete()
     author = ctx.message.author
     slapEm = discord.Embed(
     colour = discord.Colour.purple())
     slapEm.add_field(name=f'ШЛЁП', value = f'{author.mention} шлёпнул {member.mention} :3')
-    slapEm.set_image(url='https://media1.tenor.com/images/cced05bb35ffa4c5a9fca0ccb2ebcd91/tenor.gif')
+    slapEm.set_image(url=random.choice(urlsList))
     await ctx.send(embed=slapEm)
 
 @bot.command()
@@ -211,27 +221,43 @@ async def today(ctx):
 
 @bot.command()
 async def pet(ctx, member: discord.Member):
+    urlsList = ['https://media.giphy.com/media/P2IERnBfObaBW/giphy.gif', 'https://media.giphy.com/media/fpimaNarpyW88/giphy.gif', 'https://media.giphy.com/media/wsUtUtLR3A2XPvfLVs/giphy.gif',
+    'https://media.giphy.com/media/lnIwMUsMt12UnY7edf/giphy.gif', 'https://media.giphy.com/media/Ul16jlcdV1B04/giphy.gif', 'https://media.giphy.com/media/iYXvjREKcHE0U/giphy.gif', 
+    'https://media.giphy.com/media/3o85xJUQuHVCBnWGys/giphy.gif', 'https://media.giphy.com/media/yidUzl6SsJJEmRJuZq/giphy.gif']
     await ctx.message.delete()
     author = ctx.message.author
     petEm = discord.Embed(
     colour = discord.Color.gold())
     petEm.add_field(name = ':3', value=f'{author.mention} потискал {member.mention}')
-    petEm.set_image(url='https://media.tenor.com/images/dc008a41a50a3e91a523ccb9a1533c40/tenor.gif')
+    petEm.set_image(url=random.choice(urlsList))
     await ctx.send(embed=petEm)
 
 
 @bot.command()
+async def helloTo(ctx, member: discord.Member):
+    urlsList = ['https://media.giphy.com/media/L2eThScfeqittTbpWI/giphy.gif', 'https://media.giphy.com/media/Cmr1OMJ2FN0B2/giphy.gif', 'https://media.giphy.com/media/Cmr1OMJ2FN0B2/giphy.gif',
+    'https://media.giphy.com/media/JVmYAO3MkGNiM/giphy.gif', 'https://media.giphy.com/media/xUPGcigl4eOfc6hA5y/giphy.gif', 'https://media.giphy.com/media/3oKIPsx2VAYAgEHC12/giphy.gif']
+    await ctx.message.delete()
+    author = ctx.message.author
+    helloEm = discord.Embed(
+        colour = discord.Color.dark_red())
+    helloEm.add_field(name='ПЕРЕВЕД', value=f'{author.mention} передаёт привет {member.mention}!')
+    helloEm.set_image(url=random.choice(urlsList))
+    await ctx.send(embed=helloEm)
+
+@bot.command()
 async def love(ctx, member : discord.Member):
+    urlsList = ['https://media.giphy.com/media/l41JWw65TcBGjPpRK/giphy.gif', 'https://media.giphy.com/media/3og0ITQEoOUFUi5JcI/giphy.gif', 'https://media.giphy.com/media/xlNDtecvg6zLrXvOaa/giphy.gif',
+    'https://media.giphy.com/media/3o7qDJKIO5rSeyHhvO/giphy.gif', 'https://media.giphy.com/media/yc2pHdAoxVOrJ2m5Ha/giphy.gif', 'https://media.giphy.com/media/hqTwf417EvUWeV0XcX/giphy.gif']
     await ctx.message.delete()
     author = ctx.message.author
     loveEm = discord.Embed(
     colour = discord.Color.dark_purple())
     loveEm.add_field(name = 'Ех, любофф, любофф :3', value=f'{author.mention} признался в любви к {member.mention}! :heart:')
-    loveEm.set_image(url='https://media1.tenor.com/images/31362a548dc7574f80d01a42a637bc93/tenor.gif')
+    loveEm.set_image(url=random.choice(urlsList))
     await ctx.send(embed=loveEm)
         
     
-
 @bot.command()
 async def minds(ctx):
     await ctx.message.delete()
@@ -288,15 +314,6 @@ async def ping(ctx):
     await message.edit(content = "**Время задержки:** `%.2f миллисекунд`" % ping)
 
 
-@bot.command(pass_context = 1)
-async def shutdown(ctx):
-    await ctx.message.delete()
-    emb = discord.Embed(description = ':exclamation: Бот переходит в спящий режим...', color = 0xffffff)
-    emb.set_footer(text = 'Комманду вызвал: %s' % ctx.message.author.name)
-    await ctx.send(embed = emb)
-    await bot.logout()
-
-
 @bot.command()
 async def repeat(ctx, args):
     await ctx.message.delete()
@@ -311,15 +328,18 @@ async def help(ctx):
     embed.add_field(name=',joke', value='Бот рассказывает шутку (да, просто рассказывает шутку)', inline=False)
     embed.add_field(name=',facts', value='Случайный факт', inline=False)
     embed.add_field(name=',credits', value='Бесполезная функция, на которую никто никогда не будет обращать внимание', inline=False)
-    embed.add_field(name=',cat', value='Случайное фото кота :3', inline=False)
-    embed.add_field(name=',hello', value='Поздоровайся с ботом, хам >:( ', inline=False)
+    embed.add_field(name=',cat', value='Случайное фото кота :3')
+    embed.add_field(name=',hello', value='Поздоровайся с ботом, хам >:( ')
     embed.add_field(name=',minds', value = 'Умные мысли, которые вдохновляют', inline=False)
     embed.add_field(name=',repeat *любой текст* ', value='Повторяет текст, написаный выше', inline=False)
     embed.add_field(name=',ping', value='Время задержки (в миллисекундах)', inline=False)
-    embed.add_field(name=',love *@пользователь*', value = 'Покажи свою любовь :3', inline=False)
-    embed.add_field(name = ',slap *@пользователь*', value = 'Шлёпни кого-то >:)', inline=False)
+    embed.add_field(name=',love *@пользователь*', value = 'Покажи свою любовь :3', )
+    embed.add_field(name = ',slap *@пользователь*', value = 'Шлёпни кого-то >:)')
     embed.add_field(name = ',pet *@пользователь*', value='Погладь милашку :3', inline=False)
     embed.add_field(name = ',today', value = 'Текущее время и дата выводятся в чат', inline=False)
+    embed.add_field(name=',fight *@пользователь*', value='Давай выйдем раз на раз xD', inline=False)
+    embed.add_field(name=',say *текст* (текст без пробелов)', value='Сказать что-то используя речевые функции MeowBot :D', inline=False)
+    embed.add_field(name=',clear *количество удалённых сообщений*', value='Удаляет сообщения в количестве, которое вы указали!')
     embed.add_field(name='Это внизу Кэт (создатель бота), если шо ', value=':3', inline=False)
     embed.set_image(url='https://media1.tenor.com/images/b1568040b7983be6c7f8bce94caf8f21/tenor.gif')
     await ctx.send(embed=embed)
