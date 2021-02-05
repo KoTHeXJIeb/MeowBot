@@ -50,28 +50,31 @@ async def hello(ctx):
 
 
 @bot.command()
-async def fight(ctx, member: discord.Member):
+async def fight(ctx, member: discord.Member, attacker=''):
     await ctx.message.delete()
+
+    attacker = ctx.author
 
     global opponenthp
     global playerhp
     global damage
 
     while opponenthp > 0 or playerhp > 0:
+        damage = random.randint(1, 100)
         attackOpponent()
-        await ctx.send(f"Вы нанесли {damage} урона {member}")
-        await ctx.send(f'Ваш текущий уровень здоровья: {playerhp}')
+        await ctx.send(f"{attacker} нанес {damage} урона {member}")
+        await ctx.send(f'{attacker} текущий уровень здоровья: {playerhp}')
         attackPlayer()
-        await ctx.send(f"Вам нанёс {damage} урона {member}")
+        await ctx.send(f"{member} нанёс {damage} урона {attacker}")
         await ctx.send(f'Текущий уровень здоровья {member}: {opponenthp}')
         if opponenthp <= 0:
-            await ctx.send("Вы победили")
+            await ctx.send(f"{attacker} победил!")
             opponenthp = 100
             playerhp = 100
             damage = 0
             break
         elif playerhp <= 0:
-            await ctx.send("Вы проиграли")
+            await ctx.send(f"{member} выиграл!")
             opponenthp = 100
             playerhp = 100
             damage = 0
@@ -90,7 +93,7 @@ def attackOpponent():
     opponenthp -= damage
     if damage <= 0:
         damage = 5
-        damage = random.randint( 1, 100 )
+        #damage = random.randint( 1, 100 )
     if opponenthp > 100:
         opponenthp = 100
     if opponenthp < 0:
@@ -100,11 +103,11 @@ def attackOpponent():
 def attackPlayer():
     global damage
     global playerhp
-    damage -= random.randint( 1, 100)
+    #damage -= random.randint( 1, 100)
     playerhp -= damage
     if damage <= 0:
         damage = 5
-        damage = random.randint( 1, 100 )
+        #damage = random.randint( 1, 100 )
     if playerhp > 100:
         playerhp = 100
     if playerhp < 0:
@@ -340,6 +343,7 @@ async def help(ctx):
     embed.add_field(name=',fight *@пользователь*', value='Давай выйдем раз на раз xD', inline=False)
     embed.add_field(name=',say *текст* (текст без пробелов)', value='Сказать что-то используя речевые функции MeowBot :D', inline=False)
     embed.add_field(name=',clear *количество удалённых сообщений*', value='Удаляет сообщения в количестве, которое вы указали!')
+    embed.add_field(name=',report @пользователь', value='Пожалуйся на кого-то!')
     embed.add_field(name='Это внизу Кэт (создатель бота), если шо ', value=':3', inline=False)
     embed.set_image(url='https://media1.tenor.com/images/b1568040b7983be6c7f8bce94caf8f21/tenor.gif')
     await ctx.send(embed=embed)
