@@ -29,7 +29,9 @@ damage = random.randint( 1, 100 )
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound ):
         await ctx.send(embed = discord.Embed(description = f'** {ctx.author.name}, данной команды не существует.**', color=0x0c0c0c))
-
+    if isinstance(error, commands.CommandInvokeError):
+        print('Command Invoke Error! Details: ' + error)
+        await ctx.send(embed = discord.Embed(description = f'** {ctx.author.mention}, возникла некая ошибка при вызове команды.**', color=0x0c0c0c))
 
 @bot.command()
 async def say( ctx, text):
@@ -50,28 +52,31 @@ async def hello(ctx):
 
 
 @bot.command()
-async def fight(ctx, member: discord.Member):
+async def fight(ctx, member: discord.Member, attacker=''):
     await ctx.message.delete()
+
+    attacker = ctx.author
 
     global opponenthp
     global playerhp
     global damage
 
     while opponenthp > 0 or playerhp > 0:
+        damage = random.randint(1, 100)
         attackOpponent()
-        await ctx.send(f"Вы нанесли {damage} урона {member}")
-        await ctx.send(f'Ваш текущий уровень здоровья: {playerhp}')
+        await ctx.send(f"{attacker} нанес {damage} урона {member}")
+        await ctx.send(f'{attacker} текущий уровень здоровья: {playerhp}')
         attackPlayer()
-        await ctx.send(f"Вам нанёс {damage} урона {member}")
+        await ctx.send(f"{member} нанёс {damage} урона {attacker}")
         await ctx.send(f'Текущий уровень здоровья {member}: {opponenthp}')
         if opponenthp <= 0:
-            await ctx.send("Вы победили")
+            await ctx.send(f"{attacker} победил!")
             opponenthp = 100
             playerhp = 100
             damage = 0
             break
         elif playerhp <= 0:
-            await ctx.send("Вы проиграли")
+            await ctx.send(f"{member} выиграл!")
             opponenthp = 100
             playerhp = 100
             damage = 0
@@ -90,7 +95,7 @@ def attackOpponent():
     opponenthp -= damage
     if damage <= 0:
         damage = 5
-        damage = random.randint( 1, 100 )
+        #damage = random.randint( 1, 100 )
     if opponenthp > 100:
         opponenthp = 100
     if opponenthp < 0:
@@ -100,11 +105,11 @@ def attackOpponent():
 def attackPlayer():
     global damage
     global playerhp
-    damage -= random.randint( 1, 100)
+    #damage -= random.randint( 1, 100)
     playerhp -= damage
     if damage <= 0:
         damage = 5
-        damage = random.randint( 1, 100 )
+        #damage = random.randint( 1, 100 )
     if playerhp > 100:
         playerhp = 100
     if playerhp < 0:
@@ -136,49 +141,13 @@ async def on_ready():
 
 @bot.command()
 async def joke(ctx):
-    await ctx.message.delete()
-    author = ctx.message.author
-    number = random.randint(1, 20)
-    if number == 1:
-        await ctx.send(f'{author.mention}, лови шутейку:  – Доктор, как вы думаете, что будет после смерти? – Мы перестелем вашу койку и положим нового пациента.')
-    if number == 2:
-        await ctx.send(f'{author.mention}, лови шутейку:  Из выпуска новостей: – И, наконец, хорошая новость – на сегодня больше новостей нет.')
-    if number == 3:
-        await ctx.send(f'{author.mention}, лови шутейку:   Не утихает тысячелетняя битва: люди с кашей в голове против людей с промытыми мозгами…')
-    if number == 4:
-        await ctx.send(f' {author.mention}, лови шутейку: – Моня, как отразится на России уход Лукашенко в отставку? – Бензин подорожает. – А если не уйдёт? – Всё равно подорожает. ')
-    if number == 5:
-        await ctx.send(f'{author.mention}, лови шутейку:  Подорожало молоко на три рубля. Эти коровы вообще оборзели…')
-    if number == 6:
-        await ctx.send(f'{author.mention}, лови шутейку: Лукашенко не идёт на переговоры с протестующими, потому что не знает ни чешского, ни голландского языка.')
-    if number == 7:
-        await ctx.send(f'{author.mention}, лови шутейку: Он требовал форель на завтрак, но мать дала ему леща…')
-    if number == 8:
-        await ctx.send(f'{author.mention}, лови шутейку: “Целуется он так себе”, – решила лягушка и не стала превращаться в царевну.')
-    if number == 9:
-        await ctx.send(f'{author.mention}, лови шутейку:  Молодой проктолог Гера Левензон ещё стеснялся своей профессии и на дверях кабинета с максимальной деликатностью повесил табличку « Ремонт Очков»')
-    if number == 10:
-        await ctx.send(f'{author.mention}, лови шутейку: Невероятно, но факт. Только 10% людей вступают в дискуссии со своими котами, остальные 90%, слава богу, еще в здравом уме и просто прислушиваются к их советам.')
-    if number == 11:
-        await ctx.send(f'{author.mention}, лови шутейку: Астронавт Базз Олдрин так говорил, почему Алан Шепард стал первым американцем в космосе: «Вообще, — сказал он, — хотели послать обезьяну, но в НАСА пришла куча писем в защиту прав животных, а в защиту Шепарда не пришло ни одного письма. Вот он и полетел».')
-    if number == 12:
-        await ctx.send(f'{author.mention}, лови шутейку: Коррупция не знает границ: на конкурсе "Мисс Казахстан" победил 44-летний племянник главы местной администрации.')
-    if number == 13:
-        await ctx.send(f'{author.mention}, лови шутейку: В Москве нашли 119-летнюю пенсионерку. "Вот с@ка! " — прокомментировал Пенсионный фонд.')
-    if number == 14:
-        await ctx.send(f'{author.mention}, лови шутейку: Решила жена приготовить для мужа сюрприз. Купила мясо, накрутила фаршу. Заместила тесто и налепила пельменей. Сварила. Вот приходит муж с работы, она накормила и спрашивает. — Ну как пельмешки? — Та знаешь, ты больше такие не покупай.')
-    if number == 15:
-        await ctx.send(f'{author.mention}, лови шутейку: Дятел задумался и выпал с другой стороны дерева.')
-    if number == 16:
-        await ctx.send(f"""{author.mention}, лови шутейку: Муж звонит жене: — Милая, это я. Ты только, пожалуйста, не переживай. В общем, меня сбила машина, когда я выходил из офиса. Наташа помогла добраться до больницы. Врачи уже осмотрели меня, сделали рентген и анализ крови. Не обошлось без сотрясения мозга, но хотя бы череп не пробит. Сломана пара ребер, несколько глубоких ран, и возможно придется ампутировать правую ногу. Ответ жены: — Какая еще, на х***, Наташа?! """)
-    if number == 17:
-        await ctx.send(f'{author.mention}, лови шутейку: Тюрьма. В камеру заводят старенького дедушку. Его обступают блатные. — Ну че дед, за что посадили? — За шуточки. Шутить люблю. — А ну-ка, пошути. — Нет, вы меня потом бить будете. Старший: — Зуб даю, никто не тронет. — Ну, ладно. Дед берет веник, макает его в парашу, стучит в окошко. В окно заглядывает надзиратель. Дед мгновенно втирает веник ему в лицо. Окошко закрывается. Все в камере хохочут. Через минуту открывается дверь — на пороге толпа здоровенных надзирателей с дубинками. Осмотрели камеру взглядом: — А ну ка, старый, отойди в сторонку, сейчас мы с этими шутниками поговорим...')
-    if number == 18:
-        await ctx.send(f'{author.mention}, лови шутейку: Когда мой муж выходил с маленьким сыном (4 года) гулять, то вся детвора двора просто гроздьями на нем висела, он с ними бегал и раскручивал и на карусели катал, а наш детеныш предпочитал тихие игры в песочнице с формочками. Однажды нам в дверь позвонили, открываю, а там маленький мальчик стоит и спрашивает: — А Влад выйдет? Влад — имя моего мужа... (Причём тут Кэт?)')
-    if number == 19:
-        await ctx.send(f'{author.mention}, лови шутейку: Осень — это когда куришь, бухаешь, но обязательно в теплых носочках. Здоровье надо беречь.')
-    if number == 20:
-        await ctx.send(f'{author.mention}, лови шутейку: Объявление: "В ювелирный салон требуются уборщицы для вытирания слюны с пола и витрины".')
+    #response = requests.get('http://rzhunemogu.ru/Rand.aspx?CType=1')
+    #tree = ElementTree.fromstring(response.content), ElementTree.XMLParser(encoding='utf-8')
+    #tree = ElementTree.parse('http://rzhunemogu.ru/Rand.aspx?CType=1')
+    #parser = xml.sax.make_parser()
+    #text = parser.parse(response)
+    #await ctx.send(text)
+    pass
 
 @bot.command()
 async def credits(ctx):
@@ -340,6 +309,7 @@ async def help(ctx):
     embed.add_field(name=',fight *@пользователь*', value='Давай выйдем раз на раз xD', inline=False)
     embed.add_field(name=',say *текст* (текст без пробелов)', value='Сказать что-то используя речевые функции MeowBot :D', inline=False)
     embed.add_field(name=',clear *количество удалённых сообщений*', value='Удаляет сообщения в количестве, которое вы указали!')
+    embed.add_field(name=',report @пользователь', value='Пожалуйся на кого-то!')
     embed.add_field(name='Это внизу Кэт (создатель бота), если шо ', value=':3', inline=False)
     embed.set_image(url='https://media1.tenor.com/images/b1568040b7983be6c7f8bce94caf8f21/tenor.gif')
     await ctx.send(embed=embed)
